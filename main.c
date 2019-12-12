@@ -10,12 +10,22 @@
 #include "Encoder.h"
 
 void display_value(int,char);
+int keyboard_value(char key);
 
 #define KEYBOARD_ENABLED 0
 #define ENCODER_ENABLED 1
 
 #define MOVE_LEFT 0
 #define UNVALUABLE -1
+
+//keyboard
+//C3 GPIOB9
+//C2 GPIOB10
+//C1 GPIOB11
+//R4 GPIOB12
+//R3 GPIOB13
+//R2 GPIOB14
+//R1 GPIOB15
 
 //display
 //CLK GPIOB6
@@ -76,11 +86,28 @@ int main()
 void display_value(int encoderEnable, char key) {
 	int displayNumber = 0;
 	switch(enableEncoder) {
+		case KEYBOARD_ENABLED:
+			displayNumber = keyboard_value(key);
+			break;
 		case ENCODER_ENABLED:
 			displayNumber = getEncoderValue();
 			break;		
 	}
 	
 	TM1637_display_all(displayNumber);
+}
+
+int keyboard_value(char key) {
+	int convert = convert_char(key);
+	switch(convert) {
+		case UNVALUABLE:
+			break;
+		case MOVE_LEFT:
+			state = (state * 10) % 10000;
+			break;
+		default:
+			state = state - (state % 10) + convert;
+	}	
+	return state;
 }
 
