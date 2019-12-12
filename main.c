@@ -7,16 +7,15 @@
 #include "stm32f10x.h"
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_gpio.h"
+#include "Encoder.h"
 
+void display_value(int,char);
 
-//keyboard
-//C3 GPIOB9
-//C2 GPIOB10
-//C1 GPIOB11
-//R4 GPIOB12
-//R3 GPIOB13
-//R2 GPIOB14
-//R1 GPIOB15
+#define KEYBOARD_ENABLED 0
+#define ENCODER_ENABLED 1
+
+#define MOVE_LEFT 0
+#define UNVALUABLE -1
 
 //display
 //CLK GPIOB6
@@ -24,7 +23,15 @@
 //UCC 5V
 //GND G
 
+//encoder
+//CLK GPIOA1
+//DT GPIOA0
+//SV GPIOA2
+//+ 3.3
+//GND G
+
 int state = 0;
+int enableEncoder = 0;
 unsigned int keypad_columns[3] = 
 {
 	GPIO_Pin_9,
@@ -41,6 +48,7 @@ unsigned int keypad_rows[4] =
 
 int main()
 {
+	init_encoder();
 	TM1637_init();	
   TM1637_brightness(BRIGHT_TYPICAL);
 	keypad_init(keypad_columns, keypad_rows);
@@ -48,23 +56,31 @@ int main()
 	while (1)
 	{
 		char key=keypadGetKey();
-		int number = -1;;
 
 		switch(key) {
 			case '*':
-				number = state * 10;
+				enableEncoder = 0;
+				TM1637_display_all(state);
 				break;
 			case '#':
-				number = state / 10;
+				enableEncoder = 1;
+				state = 0;
 				break;
 			default:
-				number = convert_char(key);
-		}
-
-		if (number != -1) {
-			state = number;
-			TM1637_display_all(state);
+				display_value(enableEncoder, key);
+				
 		}
 		delay_ms(1);
 	}
 }
+void display_value(int encoderEnable, char key) {
+	int displayNumber = 0;
+	switch(enableEncoder) {
+		case ENCODER_ENABLED:
+			displayNumber = getEncoderValue();
+			break;		
+	}
+	
+	TM1637_display_all(displayNumber);
+}
+
